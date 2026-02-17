@@ -8,13 +8,11 @@ use crate::providers::{GitProvider};
 pub struct GitLab;
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 struct GitLabPushData {
     commit_count: i64
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 struct GitLabEvent {
     created_at: DateTime<Utc>,
 	push_data: Option<GitLabPushData>,
@@ -51,12 +49,8 @@ impl GitProvider for GitLab {
                 page
             );
 
-            println!("Called url : {}", complete_url);
-            println!("Used token : {}", token);
-
             let res = client.get(complete_url)
                 .header("PRIVATE-TOKEN", token)
-                .header("User-Agent", "GGCG-App")
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
