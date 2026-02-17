@@ -55,7 +55,7 @@ impl GitProvider for GitHub {
         "GitHub".to_string()
     }
 
-    async fn get_stats(&self, username: &str, token: &str) -> Result<Vec<(String, i64)>, String> {
+    async fn get_stats(&self, username: &str, token: &str, _url: Option<&str>) -> Result<Vec<(String, i64)>, String> {
         let query = "
             query($login: String!) {
                 user(login: $login) {

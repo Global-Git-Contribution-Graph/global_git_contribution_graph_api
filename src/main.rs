@@ -6,15 +6,19 @@ use std::sync::Arc;
 use axum::{routing::get, routing::post, Router};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 
-use crate::providers::{GitHub};
+use crate::providers::{GitHub, GitLab};
 use crate::state::AppState;
 use crate::graphql::{QueryRoot, graphql_handler, graphiql};
 
 #[tokio::main]
 async fn main() {
     let git_hub_instance = GitHub;
+    let git_lab_instance = GitLab;
     let shared_state = Arc::new(AppState {
-        providers: vec![Box::new(git_hub_instance)],
+        providers: vec![
+            Box::new(git_hub_instance), 
+            Box::new(git_lab_instance)
+        ]
     });
 
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)

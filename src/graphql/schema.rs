@@ -18,16 +18,16 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn stats(&self, ctx: &Context<'_>, name: String, username: String, token: String) -> Option<Stats> {
+    async fn stats(&self, ctx: &Context<'_>, name: String, username: String, token: String, url: Option<String>) -> Option<Stats> {
         let state = ctx.data::<Arc<AppState>>().ok()?;
 
         let provider = state.providers.iter()
             .find(|p| p.get_name().to_lowercase() == name.to_lowercase())?;
 
-        let raw_stats = match provider.get_stats(&username, &token).await {
+        let raw_stats = match provider.get_stats(&username, &token, url.as_deref()).await {
             Ok(data) => data,
             Err(e) => {
-                println!("Erreur lors de l'appel GitHub : {}", e);
+                println!("Erreur lors de l'appel API : {}", e);
                 return None;
             }
         };
