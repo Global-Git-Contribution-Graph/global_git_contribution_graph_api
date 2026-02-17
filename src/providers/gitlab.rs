@@ -8,11 +8,13 @@ use crate::providers::{GitProvider};
 pub struct GitLab;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
 struct GitLabPushData {
     commit_count: i64
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
 struct GitLabEvent {
     created_at: DateTime<Utc>,
 	push_data: Option<GitLabPushData>,
