@@ -1,20 +1,14 @@
-use std::sync::Arc;
-use axum::{routing::get, Router, Json, extract::State};
-use serde::{Serialize, Deserialize};
-
-use crate::providers::{GitProvider, GitHub};
-
 mod providers;
+mod state;
+mod graphql;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct HealthCheck {
-    status: String,
-    version: String
-}
+use std::sync::Arc;
+use axum::{routing::get, routing::post, Router};
+use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 
-struct AppState {
-    providers: Vec<Box<dyn GitProvider + Send + Sync>>
-}
+use crate::providers::{GitHub};
+use crate::state::AppState;
+use crate::graphql::{QueryRoot, graphql_handler, graphiql};
 
 #[tokio::main]
 async fn main() {
@@ -22,10 +16,15 @@ async fn main() {
     let shared_state = Arc::new(AppState {
         providers: vec![Box::new(git_hub_instance)],
     });
+
+    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+        .data(Arc::clone(&shared_state)) 
+        .finish();
     
     let app = Router::new()
-        .route("/api", get(health_check))
-        .with_state(shared_state);
+        .route("/graphql", post(graphql_handler))
+        .route("/", get(graphiql))
+        .with_state(schema);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
 
     println!("Serveur lancé sur http://127.0.0.1:3000");
@@ -34,16 +33,4 @@ async fn main() {
         Ok(_) => { println!("Server stopped"); },
         Err(e) => { eprint!("Error : {}", e); },
     };
-}
-
-async fn health_check(State(state): State<Arc<AppState>>) -> Json<HealthCheck> {
-    let name = match state.providers.get(0) {
-        Some(provider) => provider.get_name(),
-        None => "No provider".to_string()
-    };
-
-    Json(HealthCheck {
-        status: name,
-        version: "0.1.0".to_string(),
-    })
 }
