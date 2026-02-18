@@ -25,14 +25,16 @@ impl GitProvider for ForgeJo {
 
         let url = url.ok_or("URL is required")?;
 
+        let base_url = url.trim_end_matches('/');
         let complete_url = format!(
                 "{}/api/v1/users/{}/heatmap?access_token={}",
-                url,
+                base_url,
                 username,
                 token
             );
 
         let res = client.get(complete_url)
+            .header("User-Agent", "GGCG-App")
             .send()
             .await
             .map_err(|e| e.to_string())?;

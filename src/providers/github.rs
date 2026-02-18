@@ -78,9 +78,9 @@ impl GitProvider for GitHub {
                 "login": username
             }
         });
-
+        
         let client = reqwest::Client::new();
-        let res = client.post("https://api.github.com/graphql")
+        let res = client.post("https://api.github.com/graphql".trim_end_matches('/'))
             .header("Authorization", format!("bearer {}", token))
             .header("User-Agent", "GGCG-App")
             .json(&body)

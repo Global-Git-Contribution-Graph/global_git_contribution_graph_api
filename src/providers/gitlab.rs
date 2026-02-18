@@ -42,9 +42,10 @@ impl GitProvider for GitLab {
         let url = url.ok_or("URL is required")?;
 
         loop {
+            let base_url = url.trim_end_matches('/');
             let complete_url = format!(
                 "{}/api/v4/users/{}/events?action=pushed&after={}&per_page={}&page={}",
-                url,
+                base_url,
                 username,
                 after,
                 per_page,
