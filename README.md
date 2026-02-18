@@ -2,7 +2,7 @@
 
 A lightweight **Rust** backend exposing a **GraphQL API** to fetch and normalize contribution/activity data from multiple git forges (currently **GitHub** and **GitLab**). It runs an **Axum** web server with **GraphiQL** enabled for easy exploration.
 
-> Repo: `Global-Git-Contribution-Graph/global_git_contribution_graph_api` :contentReference[oaicite:0]{index=0}
+> Repo: `Global-Git-Contribution-Graph/global_git_contribution_graph_api`
 
 ---
 
@@ -28,8 +28,8 @@ A lightweight **Rust** backend exposing a **GraphQL API** to fetch and normalize
 
 This service exposes a single GraphQL query (`stats`) that returns a list of **daily contributions** (`date`, `contributionCount`) for a given provider:
 
-- **GitHub**: Uses the GitHub **GraphQL API** to fetch the contributions calendar (weeks/days) and returns non-zero days. :contentReference[oaicite:1]{index=1}  
-- **GitLab**: Uses the GitLab REST API to fetch “pushed” events, aggregates commit counts per day, and returns a sorted history (by date). :contentReference[oaicite:2]{index=2}
+- **GitHub**: Uses the GitHub **GraphQL API** to fetch the contributions calendar (weeks/days) and returns non-zero days.
+- **GitLab**: Uses the GitLab REST API to fetch “pushed” events, aggregates commit counts per day, and returns a sorted history (by date).
 
 ---
 
@@ -37,11 +37,11 @@ This service exposes a single GraphQL query (`stats`) that returns a list of **d
 
 - Providers implement a shared `GitProvider` trait:
   - `get_name() -> String`
-  - `get_stats(username, token, url) -> Result<Vec<(String, i64)>, String>` :contentReference[oaicite:3]{index=3}
-- The server registers both providers (`GitHub`, `GitLab`) in shared state and injects it into the GraphQL schema. :contentReference[oaicite:4]{index=4}
+  - `get_stats(username, token, url) -> Result<Vec<(String, i64)>, String>` 
+- The server registers both providers (`GitHub`, `GitLab`) in shared state and injects it into the GraphQL schema.
 - Axum serves:
   - `POST /graphql` for GraphQL requests
-  - `GET /` for GraphiQL UI :contentReference[oaicite:5]{index=5}
+  - `GET /` for GraphiQL UI
 
 ---
 
@@ -49,10 +49,10 @@ This service exposes a single GraphQL query (`stats`) that returns a list of **d
 
 ### Endpoints
 
-- `GET /` – GraphiQL UI :contentReference[oaicite:6]{index=6}  
-- `POST /graphql` – GraphQL endpoint :contentReference[oaicite:7]{index=7}  
+- `GET /` – GraphiQL UI 
+- `POST /graphql` – GraphQL endpoint
 
-Server binds to `0.0.0.0:3000` by default. :contentReference[oaicite:8]{index=8}
+Server binds to `0.0.0.0:3000` by default.
 
 ### GraphQL schema
 
@@ -62,16 +62,16 @@ The core query is:
 
 Where:
 
-- `name`: provider name (e.g. `"GitHub"` or `"GitLab"`) (matched case-insensitively) :contentReference[oaicite:9]{index=9}
-- `username`: username used in the path to the current git forge endpoint :contentReference[oaicite:10]{index=10}
+- `name`: provider name (e.g. `"GitHub"` or `"GitLab"`) (matched case-insensitively)
+- `username`: username used in the path to the current git forge endpoint
 - `token`:
-  - Private Access Token: **PRIVATE-TOKEN** header :contentReference[oaicite:12]{index=12}
-- `url`: required for self-hosted Git instances, ignored for GitHub :contentReference[oaicite:13]{index=13}
+  - Private Access Token: **PRIVATE-TOKEN** header
+- `url`: required for self-hosted Git instances, ignored for GitHub
 
 The response includes:
 
 - `Stats { history: [DailyContribution!]! }`
-- `DailyContribution { date: String!, contributionCount: Int! }` :contentReference[oaicite:14]{index=14}
+- `DailyContribution { date: String!, contributionCount: Int! }`
 
 ### Example queries
 
@@ -207,14 +207,3 @@ Contributions are welcome:
 Ideas:
 
 * Add caching (Redis)
-
-```
-::contentReference[oaicite:27]{index=27}
-```
-
-[1]: https://raw.githubusercontent.com/Global-Git-Contribution-Graph/global_git_contribution_graph_api/main/Cargo.toml "raw.githubusercontent.com"
-[2]: https://raw.githubusercontent.com/Global-Git-Contribution-Graph/global_git_contribution_graph_api/main/src/main.rs "raw.githubusercontent.com"
-[3]: https://raw.githubusercontent.com/Global-Git-Contribution-Graph/global_git_contribution_graph_api/main/src/graphql/schema.rs "raw.githubusercontent.com"
-[4]: https://raw.githubusercontent.com/Global-Git-Contribution-Graph/global_git_contribution_graph_api/main/.devcontainer/devcontainer.json "raw.githubusercontent.com"
-[5]: https://raw.githubusercontent.com/Global-Git-Contribution-Graph/global_git_contribution_graph_api/main/src/providers/github.rs "raw.githubusercontent.com"
-[6]: https://raw.githubusercontent.com/Global-Git-Contribution-Graph/global_git_contribution_graph_api/main/src/providers/gitlab.rs "raw.githubusercontent.com"
