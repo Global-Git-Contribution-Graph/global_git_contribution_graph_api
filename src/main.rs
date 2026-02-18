@@ -6,7 +6,7 @@ use std::sync::Arc;
 use axum::{routing::get, routing::post, Router};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 
-use crate::providers::{GitHub, GitLab};
+use crate::providers::{GitHub, GitLab, ForgeJo};
 use crate::state::AppState;
 use crate::graphql::{QueryRoot, graphql_handler, graphiql};
 
@@ -14,10 +14,12 @@ use crate::graphql::{QueryRoot, graphql_handler, graphiql};
 async fn main() {
     let git_hub_instance = GitHub;
     let git_lab_instance = GitLab;
+    let forgejo_instance = ForgeJo;
     let shared_state = Arc::new(AppState {
         providers: vec![
             Box::new(git_hub_instance), 
-            Box::new(git_lab_instance)
+            Box::new(git_lab_instance),
+            Box::new(forgejo_instance)
         ]
     });
 
