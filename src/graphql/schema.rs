@@ -2,17 +2,23 @@ use std::{sync::Arc};
 use async_graphql::{Object, Context, SimpleObject, InputObject};
 
 use crate::state::AppState;
-use crate::services::{get_aggregated_stats, ForgeRequest};
+use crate::services::{get_aggregated_stats, transform_to_heatmap, ForgeRequest};
 
-#[derive(SimpleObject)]
-struct DailyContribution {
-    date: String,
-    contribution_count: i64
+#[derive(SimpleObject, Debug, Clone)]
+pub struct HeatmapCell {
+    pub date: String,
+    pub count: i64,
+    pub level: i64 // 0 to 4
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct HeatmapWeek {
+    pub days: Vec<HeatmapCell>
 }
 
 #[derive(SimpleObject)]
 struct Stats {
-    history: Vec<DailyContribution>
+    heatmap: Vec<HeatmapWeek>
 }
 
 #[derive(InputObject)]
@@ -37,14 +43,13 @@ impl QueryRoot {
             url: f.url,
         }).collect();
 
-        let raw_history = get_aggregated_stats(&state.providers, requests).await;
+        let totals = get_aggregated_stats(&state.providers, requests).await;
 
-        let history = raw_history.into_iter().map(|(date, count)| DailyContribution {
-            date,
-            contribution_count: count
-        }).collect();
+        let heatmap = transform_to_heatmap(totals);
 
-        Some(Stats { history })
+        Some(Stats { 
+            heatmap
+        })
     }
 }
 

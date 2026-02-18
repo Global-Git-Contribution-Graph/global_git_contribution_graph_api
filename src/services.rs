@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use futures::future::join_all;
+use chrono::{Local, Duration, Datelike};
 
 use crate::providers::GitProvider;
+use crate::graphql::schema::{HeatmapWeek, HeatmapCell};
 
 pub struct ForgeRequest {
     pub name: String,
@@ -11,7 +13,7 @@ pub struct ForgeRequest {
     pub url: Option<String>,
 }
 
-pub async fn get_aggregated_stats(providers: &[Arc<dyn GitProvider + Send + Sync>], forges: Vec<ForgeRequest>) -> Vec<(String, i64)> {
+pub async fn get_aggregated_stats(providers: &[Arc<dyn GitProvider + Send + Sync>], forges: Vec<ForgeRequest>) -> HashMap<String, i64> {
     let mut tasks = Vec::new();
 
     for forge in forges {
@@ -41,10 +43,63 @@ pub async fn get_aggregated_stats(providers: &[Arc<dyn GitProvider + Send + Sync
         }
     }
 
-    let mut history: Vec<(String, i64)> = totals
-        .into_iter()
-        .collect();
-    history.sort_by(|a, b| a.0.cmp(&b.0));
+    totals
+}
 
-    history
+pub fn transform_to_heatmap(totals: HashMap<String, i64>) -> Vec<HeatmapWeek> {
+    let today = Local::now().date_naive();
+
+    let one_year_ago = today - Duration::weeks(52);
+    let days_from_sunday = one_year_ago.weekday().num_days_from_sunday();
+    let start_date = one_year_ago - Duration::days(days_from_sunday as i64);
+
+    let mut weeks: Vec<HeatmapWeek> = Vec::new();
+    let mut current_week_days: Vec<HeatmapCell> = Vec::new();
+
+    // max calculation for color scale
+    let max_contribution = totals.values().max().cloned().unwrap_or(0);
+
+    let mut current_date = start_date;
+
+    while current_date <= today || current_date.weekday().num_days_from_sunday() != 0 {
+        let date_str = current_date.format("%Y-%m-%d").to_string();
+        let count = *totals.get(&date_str).unwrap_or(&0);
+
+        let level = calculate_level(count, max_contribution);
+
+        current_week_days.push(HeatmapCell {
+            date: date_str,
+            count,
+            level,
+        });
+
+        // if we have seven days, we close for the week
+        if current_week_days.len() == 7 {
+            weeks.push(HeatmapWeek { days: current_week_days });
+            current_week_days = Vec::new();
+        }
+
+        current_date += Duration::days(1);
+        
+        // security to prevent an infinite loop if the date logic fails
+        if weeks.len() > 54 { break; } 
+    }
+
+    if !current_week_days.is_empty() {
+        weeks.push(HeatmapWeek { days: current_week_days });
+    }
+
+    weeks
+}
+
+fn calculate_level(count: i64, max: i64) -> i64 {
+    if count == 0 { return 0; }
+    if max <= 0 { return 0; }
+
+    let ratio = count as f64 / max as f64;
+    
+    if ratio <= 0.25 { 1 }
+    else if ratio <= 0.50 { 2 }
+    else if ratio <= 0.75 { 3 }
+    else { 4 }
 }
