@@ -1,6 +1,7 @@
 mod providers;
 mod state;
 mod graphql;
+mod services;
 
 use std::sync::Arc;
 use axum::{routing::get, routing::post, Router};

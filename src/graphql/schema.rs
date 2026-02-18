@@ -1,8 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{sync::Arc};
 use async_graphql::{Object, Context, SimpleObject, InputObject};
-use futures::future::join_all;
 
 use crate::state::AppState;
+use crate::services::{get_aggregated_stats, ForgeRequest};
 
 #[derive(SimpleObject)]
 struct DailyContribution {
@@ -29,40 +29,20 @@ pub struct QueryRoot;
 impl QueryRoot {
     async fn stats(&self, ctx: &Context<'_>, forges: Vec<ForgeInput>) -> Option<Stats> {
         let state = ctx.data::<Arc<AppState>>().ok()?;
-        let mut tasks = Vec::new();
 
-        for forge in forges {
-            let provider = state.providers
-                .iter()
-                .find(|p| p.get_name().to_lowercase() == forge.name.to_lowercase())?
-                .clone();
+        let requests: Vec<ForgeRequest> = forges.into_iter().map(|f| ForgeRequest {
+            name: f.name,
+            username: f.username,
+            token: f.token,
+            url: f.url,
+        }).collect();
 
-            tasks.push(async move {
-                provider.get_stats(&forge.username, &forge.token, forge.url.as_deref()).await
-            });
-        }
+        let raw_history = get_aggregated_stats(&state.providers, requests).await;
 
-        let results: Vec<Result<Vec<(String, i64)>, String>> = join_all(tasks).await;
-        let mut totals: HashMap<String, i64> = HashMap::new();
-
-        for result in results {
-            match result {
-                Ok(raw_stats) => {
-                    for (date, count) in raw_stats {
-                        *totals.entry(date).or_insert(0) += count;
-                    }
-                }
-                Err(e) => {
-                    println!("Erreur lors de l'appel API : {}", e);
-                }
-            }
-        }
-
-        let mut history: Vec<DailyContribution> = totals
-            .into_iter()
-            .map(|(date, contribution_count)| DailyContribution { date, contribution_count })
-            .collect();
-        history.sort_by(|a, b| a.date.cmp(&b.date));
+        let history = raw_history.into_iter().map(|(date, count)| DailyContribution {
+            date,
+            contribution_count: count
+        }).collect();
 
         Some(Stats { history })
     }
