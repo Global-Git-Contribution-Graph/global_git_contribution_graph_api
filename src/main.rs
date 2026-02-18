@@ -17,9 +17,9 @@ async fn main() {
     let forgejo_instance = ForgeJo;
     let shared_state = Arc::new(AppState {
         providers: vec![
-            Box::new(git_hub_instance), 
-            Box::new(git_lab_instance),
-            Box::new(forgejo_instance)
+            Arc::new(git_hub_instance),
+            Arc::new(git_lab_instance),
+            Arc::new(forgejo_instance)
         ]
     });
 
