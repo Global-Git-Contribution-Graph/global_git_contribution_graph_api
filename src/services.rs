@@ -19,18 +19,15 @@ pub async fn get_aggregated_stats(providers: &[Arc<dyn GitProvider + Send + Sync
     
     if let Ok(mut conn) = redis_client.get_multiplexed_async_connection().await {
         let cached_data: Option<String> = conn.get(&cache_key).await.unwrap_or(None);
-        println!("DEBUG: Connexion a Redis effectuée");
 
         if let Some(json_str) = cached_data {
             if let Ok(cached_totals) = serde_json::from_str::<HashMap<String, i64>>(&json_str) {
-                println!("DEBUG: Cache present, retour des données");
                 return cached_totals;
             }
         }
     }
 
     // Cache miss
-    println!("DEBUG: Pas de cache, fetch_stats");
     let totals: HashMap<String, i64> = fetch_stats(providers, forges).await;
  
     if let Ok(mut conn) = redis_client.get_multiplexed_async_connection().await {

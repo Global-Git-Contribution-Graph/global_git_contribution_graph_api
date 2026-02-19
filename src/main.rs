@@ -23,7 +23,7 @@ async fn main() {
     let git_lab_instance = GitLab;
     let forgejo_instance = ForgeJo;
 
-    let redis_client = redis::Client::open("redis://127.0.0.1/").expect("Unable to create the Redis client");
+    let redis_client = redis::Client::open("redis://redis:6379").expect("Unable to create the Redis client");
 
     let shared_state = Arc::new(AppState {
         providers: vec![
