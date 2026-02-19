@@ -22,12 +22,16 @@ async fn main() {
     let git_hub_instance = GitHub;
     let git_lab_instance = GitLab;
     let forgejo_instance = ForgeJo;
+
+    let redis_client = redis::Client::open("redis://127.0.0.1/").expect("Unable to create the Redis client");
+
     let shared_state = Arc::new(AppState {
         providers: vec![
             Arc::new(git_hub_instance),
             Arc::new(git_lab_instance),
             Arc::new(forgejo_instance)
-        ]
+        ],
+        redis_client: redis_client
     });
 
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)

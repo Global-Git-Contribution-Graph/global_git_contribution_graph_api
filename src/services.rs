@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use futures::future::join_all;
 use chrono::{Local, Duration, Datelike};
+use redis::AsyncCommands;
 
 use crate::providers::GitProvider;
 use crate::graphql::schema::{HeatmapWeek, HeatmapCell};
@@ -13,7 +14,35 @@ pub struct ForgeRequest {
     pub url: Option<String>,
 }
 
-pub async fn get_aggregated_stats(providers: &[Arc<dyn GitProvider + Send + Sync>], forges: Vec<ForgeRequest>) -> HashMap<String, i64> {
+pub async fn get_aggregated_stats(providers: &[Arc<dyn GitProvider + Send + Sync>], redis_client: &redis::Client, uid: String, forges: Vec<ForgeRequest>) -> HashMap<String, i64> {
+    let cache_key = format!("cache:{}", uid);
+    
+    if let Ok(mut conn) = redis_client.get_multiplexed_async_connection().await {
+        let cached_data: Option<String> = conn.get(&cache_key).await.unwrap_or(None);
+        println!("DEBUG: Connexion a Redis effectuée");
+
+        if let Some(json_str) = cached_data {
+            if let Ok(cached_totals) = serde_json::from_str::<HashMap<String, i64>>(&json_str) {
+                println!("DEBUG: Cache present, retour des données");
+                return cached_totals;
+            }
+        }
+    }
+
+    // Cache miss
+    println!("DEBUG: Pas de cache, fetch_stats");
+    let totals: HashMap<String, i64> = fetch_stats(providers, forges).await;
+ 
+    if let Ok(mut conn) = redis_client.get_multiplexed_async_connection().await {
+        if let Ok(json_str) = serde_json::to_string(&totals) {
+            let _: redis::RedisResult<()> = conn.set_ex(&cache_key, json_str, 3600).await;
+        }
+    }
+
+    totals
+}
+
+pub async fn fetch_stats(providers: &[Arc<dyn GitProvider + Send + Sync>], forges: Vec<ForgeRequest>) -> HashMap<String, i64> {
     let mut tasks = Vec::new();
 
     for forge in forges {

@@ -33,7 +33,7 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn stats(&self, ctx: &Context<'_>, forges: Vec<ForgeInput>) -> Option<Stats> {
+    async fn stats(&self, ctx: &Context<'_>, uid: String, forges: Vec<ForgeInput>) -> Option<Stats> {
         let state = ctx.data::<Arc<AppState>>().ok()?;
 
         let requests: Vec<ForgeRequest> = forges.into_iter().map(|f| ForgeRequest {
@@ -43,7 +43,7 @@ impl QueryRoot {
             url: f.url,
         }).collect();
 
-        let totals = get_aggregated_stats(&state.providers, requests).await;
+        let totals = get_aggregated_stats(&state.providers, &state.redis_client, uid, requests).await;
 
         let heatmap = transform_to_heatmap(totals);
 

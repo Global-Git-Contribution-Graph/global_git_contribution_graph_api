@@ -4,4 +4,5 @@ use crate::providers::GitProvider;
 
 pub struct AppState {
     pub providers: Vec<Arc<dyn GitProvider + Send + Sync>>,
+    pub redis_client: redis::Client, 
 }
