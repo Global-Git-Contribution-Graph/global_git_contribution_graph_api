@@ -1,6 +1,9 @@
 {
-  "name": "GGCG Backend",
-  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+  "name": "Rust & Redis",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  
   "customizations": {
     "vscode": {
       "extensions": [

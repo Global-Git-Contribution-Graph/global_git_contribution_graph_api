@@ -1,0 +1,12 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/rust:latest
+    volumes:
+      - ..:/workspace:cached
+    command: /bin/sh -c "while sleep 1000; do :; done"
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
